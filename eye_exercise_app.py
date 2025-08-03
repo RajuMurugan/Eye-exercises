@@ -137,13 +137,6 @@ with st.sidebar:
         logout_user()
         st.rerun()
 
-# --- Placeholder for main app content ---
-st.title("👁️ Eye Exercise Trainer")
-
-
-# Ready for main app logic...
-
-
 # --- Eye Exercises ---
 exercises = [
     "Left to Right", "Right to Left", "Top to Bottom", "Bottom to Top",
@@ -168,7 +161,7 @@ if(input){ input.value = `${width},${height}`; input.dispatchEvent(new Event("in
 </script>
 """, height=0)
 
-dims_str = browser_dims.text_input("Browser Size", key="browser-size")
+
 
 # --- Canvas Sizing ---
 if dims_str:
@@ -346,6 +339,7 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
 
 
 
