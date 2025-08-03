@@ -6,7 +6,7 @@ import math
 import yaml
 import uuid
 from datetime import datetime
-import streamlit.components.v1 as components
+import json
 
 # --- Page Config ---
 st.set_page_config(page_title="👁️ Eye Exercise Trainer", layout="wide")
@@ -112,7 +112,7 @@ if not is_session_valid(mobile, st.session_state.device_id):
 
 update_session(mobile, st.session_state.device_id)
 
-# --- Sidebar Logout ---
+# --- Logout Option ---
 with st.sidebar:
     st.success(f"✅ Logged in as: {mobile}")
     remaining = SESSION_TIMEOUT - int(time.time() - session_data["active_users"][mobile]["timestamp"])
@@ -121,49 +121,7 @@ with st.sidebar:
         logout_user()
         st.rerun()
 
-# --- JavaScript to Detect Browser Size ---
-components.html("""
-<script>
-window.onload = () => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const input = window.parent.document.querySelector('input[data-testid="fullscreen-dims"]');
-    if(input){
-        input.value = `${width},${height}`;
-        input.dispatchEvent(new Event("input", { bubbles: true }));
-    }
-};
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'f') {
-        const elem = document.documentElement;
-        if (!document.fullscreenElement) {
-            elem.requestFullscreen().catch(err => console.log(err));
-        } else {
-            document.exitFullscreen();
-        }
-    }
-});
-</script>
-""", height=0)
-
-dims_str = st.text_input("", key="fullscreen-dims", label_visibility="collapsed")
-
-# --- Assign Dimensions ---
-if dims_str and "," in dims_str:
-    try:
-        full_width, full_height = map(int, dims_str.split(","))
-        canvas_width = full_width
-        canvas_height = full_height
-    except:
-        canvas_width, canvas_height = (1024, 600)
-else:
-    canvas_width, canvas_height = (1024, 600)
-
-radius = int(min(canvas_width, canvas_height) * 0.15)
-dot_size = int(min(canvas_width, canvas_height) * 0.05)
-margin = 40
-
-# --- Exercises ---
+# --- Eye Exercises ---
 exercises = [
     "Left to Right", "Right to Left", "Top to Bottom", "Bottom to Top",
     "Circle Clockwise", "Circle Anti-Clockwise", "Diagonal ↘", "Diagonal ↙",
@@ -171,14 +129,19 @@ exercises = [
     "Appearing Dot Focus", "Micro Saccades", "Eye Relaxation", "W Shape"
 ]
 
-# --- UI Settings ---
+# --- Settings ---
 st.title("👁️ Eye Exercise Trainer")
 mode = st.radio("Choose Mode", ["🕒 Automatic", "🎮 Controllable"], horizontal=True)
+device = st.selectbox("💻 Device", ["Laptop/Desktop", "Mobile"])
+canvas_width, canvas_height = (1024, 600) if device == "Laptop/Desktop" else (360, 300)
+radius = 150 if device == "Laptop/Desktop" else 80
+dot_size = 30 if device == "Laptop/Desktop" else 20
+margin = 40
 dark_mode = st.toggle("🌙 Dark Mode", value=False)
 speed_mode = st.selectbox("🌟 Speed Mode", ["Relax", "Therapy", "Focus"])
 speed_multiplier = {"Relax": 0.7, "Therapy": 1.0, "Focus": 1.3}[speed_mode]
 
-# --- State ---
+# --- UI State ---
 if "current_index" not in st.session_state:
     st.session_state.current_index = 0
 if "is_running" not in st.session_state:
@@ -187,7 +150,7 @@ if "is_running" not in st.session_state:
 placeholder = st.empty()
 countdown = st.empty()
 
-# --- Get Dot Position ---
+# --- Position Logic ---
 def get_position(t, ex):
     x, y = canvas_width // 2, canvas_height // 2
     progress = abs(math.sin(2 * math.pi * t))
@@ -321,9 +284,12 @@ def run_manual():
         placeholder.empty()
         countdown.empty()
 
-# --- Start Logic ---
+# --- Start App Logic ---
 if mode == "🕒 Automatic":
     if st.button("▶ Start Automatic Routine"):
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
+
+
