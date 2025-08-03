@@ -137,6 +137,9 @@ with st.sidebar:
         logout_user()
         st.rerun()
 
+# Ready for main app logic...
+
+
 # --- Eye Exercises ---
 exercises = [
     "Left to Right", "Right to Left", "Top to Bottom", "Bottom to Top",
@@ -339,4 +342,5 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
 
