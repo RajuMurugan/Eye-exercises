@@ -151,50 +151,40 @@ placeholder = st.empty()
 countdown = st.empty()
 
 # --- Position Logic ---
-def get_position(t, ex):
+def get_position(t, ex, canvas_width, canvas_height, margin, radius):
     x, y = canvas_width // 2, canvas_height // 2
     progress = abs(math.sin(2 * math.pi * t))
 
     if ex == "Left to Right":
         x = margin + int((canvas_width - 2 * margin) * progress)
-
     elif ex == "Right to Left":
         x = canvas_width - margin - int((canvas_width - 2 * margin) * progress)
-
     elif ex == "Top to Bottom":
         y = margin + int((canvas_height - 2 * margin) * progress)
-
     elif ex == "Bottom to Top":
         y = canvas_height - margin - int((canvas_height - 2 * margin) * progress)
-
     elif ex == "Circle Clockwise":
         angle = 2 * math.pi * t
         x = canvas_width // 2 + int(radius * math.cos(angle))
         y = canvas_height // 2 + int(radius * math.sin(angle))
-
     elif ex == "Circle Anti-Clockwise":
         angle = -2 * math.pi * t
         x = canvas_width // 2 + int(radius * math.cos(angle))
         y = canvas_height // 2 + int(radius * math.sin(angle))
-
     elif ex == "Diagonal ↘":
-        x = margin + int((canvas_width - 2 * margin) * progress)
-        y = margin + int((canvas_height - 2 * margin) * progress)
-
+        x = margin + int((canvas_width - 2 * margin) * (t % 1))
+        y = margin + int((canvas_height - 2 * margin) * (t % 1))
     elif ex == "Diagonal ↙":
-        x = canvas_width - margin - int((canvas_width - 2 * margin) * progress)
-        y = margin + int((canvas_height - 2 * margin) * progress)
-
+        x = canvas_width - margin - int((canvas_width - 2 * margin) * (t % 1))
+        y = margin + int((canvas_height - 2 * margin) * (t % 1))
     elif ex == "Zig-Zag":
         freq = 5
         x = margin + int((canvas_width - 2 * margin) * (t % 1))
         y = canvas_height // 2 + int(radius * math.sin(freq * 2 * math.pi * t) / 1.5)
-
     elif ex == "Figure Eight":
         angle = 2 * math.pi * t
         x = canvas_width // 2 + int(radius * math.sin(angle))
         y = canvas_height // 2 + int(radius * math.sin(angle) * math.cos(angle))
-
     elif ex == "Square Path":
         side = int((t * 4) % 4)
         prog = (t * 4) % 1
@@ -210,43 +200,18 @@ def get_position(t, ex):
         elif side == 3:
             x = margin
             y = canvas_height - margin - int((canvas_height - 2 * margin) * prog)
-
     elif ex == "Appearing Dot Focus":
         visible = math.sin(2 * math.pi * t) > 0
         return (canvas_width // 2, canvas_height // 2) if visible else (-1000, -1000)
-
     elif ex == "Blinking":
-        blink = int(t * 2) % 2  # toggle every 0.5 seconds
-        return (canvas_width // 2, canvas_height // 2) if blink == 0 else (-1000, -1000)
-
-    elif ex == "Near-Far":
-        # Returns position and scale (you must handle scale in drawing logic)
-        scale = 0.5 + 0.5 * math.sin(2 * math.pi * t)  # range 0–1
+        blink = int(t * 2) % 2 == 0
+        return (canvas_width // 2, canvas_height // 2) if blink else (-1000, -1000)
+    elif ex == "Near-Far Focus":
+        scale = 0.5 + 0.5 * math.sin(2 * math.pi * t)
         return (canvas_width // 2, canvas_height // 2, scale)
-
     elif ex == "Micro Saccades":
         x = canvas_width // 2 + int(10 * math.sin(30 * math.pi * t))
         y = canvas_height // 2 + int(10 * math.cos(25 * math.pi * t))
-
-    elif ex == "Eye Relaxation":
-        x = canvas_width // 2 + int(radius * math.sin(2 * math.pi * t))
-        y = canvas_height // 2 + int(radius * math.sin(math.pi * t))
-
-    elif ex == "W Shape":
-        phase = (t * 4) % 4
-        p = phase % 1
-        if phase < 1:
-            x = margin + int((canvas_width - 2 * margin) * p / 2)
-            y = margin + int((canvas_height - 2 * margin) * p)
-        elif phase < 2:
-            x = canvas_width // 2 + int((canvas_width - 2 * margin) * p / 2)
-            y = canvas_height - margin - int((canvas_height - 2 * margin) * p)
-        elif phase < 3:
-            x = canvas_width // 2 + int((canvas_width - 2 * margin) * p / 2)
-            y = margin + int((canvas_height - 2 * margin) * p)
-        else:
-            x = canvas_width - margin - int((canvas_width - 2 * margin) * p / 2)
-            y = canvas_height - margin - int((canvas_height - 2 * margin) * p)
 
     return x, y
 
@@ -316,4 +281,5 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
 
