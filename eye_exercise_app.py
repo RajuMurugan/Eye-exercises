@@ -162,7 +162,10 @@ if(input){ input.value = `${width},${height}`; input.dispatchEvent(new Event("in
 """, height=0)
 
 # --- 🟢 Fix: Add this line to receive browser width/height ---
-dims_str = st.text_input("browser-size", key="browser-size", label_visibility="collapsed")
+browser_input = st.empty()
+dims_str = browser_input.text_input("", key="browser-size", label_visibility="collapsed")
+st.markdown("<style>div[data-testid='stTextInput'] { margin-top: -40px; margin-bottom: -30px; }</style>", unsafe_allow_html=True)
+
 
 # --- Canvas Sizing ---
 if dims_str:
@@ -341,6 +344,7 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
 
 
 
