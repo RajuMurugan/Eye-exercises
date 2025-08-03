@@ -1,4 +1,6 @@
-# --- Eye Exercise Trainer ---
+# Full updated Streamlit code for Eye Exercise App without Blinking and Appearing Dot Focus
+# and with fixed Star Pattern
+
 import streamlit as st
 import platform
 import os
@@ -13,7 +15,7 @@ from datetime import datetime
 st.set_page_config(page_title="👁️ Eye Exercise Trainer", layout="wide")
 
 # --- Constants ---
-SESSION_TIMEOUT = 180  # seconds
+SESSION_TIMEOUT = 180  # seconds (3 min)
 CONFIG_FILE = "config.yaml"
 SESSION_FILE = "session_data.yaml"
 
@@ -54,20 +56,29 @@ def update_session(mobile, device_id):
 
 def is_session_valid(mobile, device_id):
     user = session_data["active_users"].get(mobile)
-    return user and user["device_id"] == device_id and (time.time() - user["timestamp"]) < SESSION_TIMEOUT
+    if not user:
+        return False
+    return (
+        user["device_id"] == device_id and
+        (time.time() - user["timestamp"]) < SESSION_TIMEOUT
+    )
 
 def logout_user():
     mobile = st.session_state.get("mobile", "")
-    session_data["active_users"].pop(mobile, None)
-    save_sessions(session_data)
+    if mobile in session_data["active_users"]:
+        session_data["active_users"].pop(mobile)
+        save_sessions(session_data)
     st.session_state.logged_in = False
     st.session_state.mobile = ""
     st.session_state.device_id = str(uuid.uuid4())
 
 # --- Init Session State ---
-for key in ["logged_in", "mobile", "device_id"]:
-    if key not in st.session_state:
-        st.session_state[key] = False if key == "logged_in" else ("" if key == "mobile" else str(uuid.uuid4()))
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "mobile" not in st.session_state:
+    st.session_state.mobile = ""
+if "device_id" not in st.session_state:
+    st.session_state.device_id = str(uuid.uuid4())
 
 # --- Load Config and Sessions ---
 config = load_config()
@@ -96,7 +107,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 # --- Validate Session ---
-mobile = st.session_state.mobile
+mobile = st.session_state.get("mobile", "")
 if not is_session_valid(mobile, st.session_state.device_id):
     logout_user()
     st.warning("⚠️ Session expired. Please login again.")
@@ -104,7 +115,7 @@ if not is_session_valid(mobile, st.session_state.device_id):
 
 update_session(mobile, st.session_state.device_id)
 
-# --- Sidebar ---
+# --- Logout Option ---
 with st.sidebar:
     st.success(f"✅ Logged in as: {mobile}")
     remaining = SESSION_TIMEOUT - int(time.time() - session_data["active_users"][mobile]["timestamp"])
@@ -113,16 +124,15 @@ with st.sidebar:
         logout_user()
         st.rerun()
 
-# --- Exercise List ---
+# --- Eye Exercises ---
 exercises = [
     "Left to Right", "Right to Left", "Top to Bottom", "Bottom to Top",
     "Circle Clockwise", "Circle Anti-Clockwise", "Diagonal ↘", "Diagonal ↙",
-    "Zig-Zag", "Blinking", "Near-Far Focus", "Figure Eight", "Square Path",
-    "Appearing Dot Focus", "Micro Saccades", "Eye Relaxation", "W Shape",
-    "Star Pattern", "Random Jump"
+    "Zig-Zag", "Near-Far Focus", "Figure Eight", "Square Path",
+    "Micro Saccades", "Eye Relaxation", "W Shape", "Star Pattern", "Random Jump"
 ]
 
-# --- UI Settings ---
+# --- Settings ---
 st.title("👁️ Eye Exercise Trainer")
 mode = st.radio("Choose Mode", ["🕒 Automatic", "🎮 Controllable"], horizontal=True)
 device = st.selectbox("💻 Device", ["Laptop/Desktop", "Mobile"])
@@ -134,10 +144,10 @@ dark_mode = st.toggle("🌙 Dark Mode", value=False)
 speed_mode = st.selectbox("🌟 Speed Mode", ["Relax", "Therapy", "Focus"])
 speed_multiplier = {"Relax": 0.7, "Therapy": 1.0, "Focus": 1.3}[speed_mode]
 
-# --- UI States ---
-for key, default in [("current_index", 0), ("is_running", False)]:
-    if key not in st.session_state:
-        st.session_state[key] = default
+if "current_index" not in st.session_state:
+    st.session_state.current_index = 0
+if "is_running" not in st.session_state:
+    st.session_state.is_running = False
 
 placeholder = st.empty()
 countdown = st.empty()
@@ -173,6 +183,9 @@ def get_position(t, ex):
         freq = 5
         x = margin + int((canvas_width - 2 * margin) * (t % 1))
         y = canvas_height // 2 + int(radius * math.sin(freq * 2 * math.pi * t) / 1.5)
+    elif ex == "Near-Far Focus":
+        scale = 0.5 + 0.5 * math.sin(2 * math.pi * t)
+        return (canvas_width // 2, canvas_height // 2, scale)
     elif ex == "Figure Eight":
         angle = 2 * math.pi * t
         x = canvas_width // 2 + int(radius * math.sin(angle))
@@ -189,23 +202,15 @@ def get_position(t, ex):
         elif side == 2:
             x = canvas_width - margin - int((canvas_width - 2 * margin) * prog)
             y = canvas_height - margin
-        else:
+        elif side == 3:
             x = margin
             y = canvas_height - margin - int((canvas_height - 2 * margin) * prog)
-    elif ex == "Appearing Dot Focus":
-        return (canvas_width // 2, canvas_height // 2) if int(t * 2) % 2 == 0 else (
-            random.randint(margin, canvas_width - margin), random.randint(margin, canvas_height - margin))
-    elif ex == "Blinking":
-        return (x, y) if int(t * 2) % 2 == 0 else (-1000, -1000)
-    elif ex == "Near-Far Focus":
-        scale = 0.5 + 0.5 * math.sin(2 * math.pi * t)
-        return x, y, scale
     elif ex == "Micro Saccades":
-        x += int(10 * math.sin(30 * math.pi * t))
-        y += int(10 * math.cos(25 * math.pi * t))
+        x = canvas_width // 2 + int(10 * math.sin(30 * math.pi * t))
+        y = canvas_height // 2 + int(10 * math.cos(25 * math.pi * t))
     elif ex == "Eye Relaxation":
-        x += int(radius * math.sin(2 * math.pi * t))
-        y += int(radius * math.sin(math.pi * t))
+        x = canvas_width // 2 + int(radius * math.sin(2 * math.pi * t))
+        y = canvas_height // 2 + int(radius * math.sin(math.pi * t))
     elif ex == "W Shape":
         phase = (t * 4) % 4
         p = phase % 1
@@ -222,11 +227,20 @@ def get_position(t, ex):
             x = canvas_width - margin - int((canvas_width - 2 * margin) * p / 2)
             y = canvas_height - margin - int((canvas_height - 2 * margin) * p)
     elif ex == "Star Pattern":
-        points = [(canvas_width // 2, margin), (canvas_width - margin, canvas_height - margin),
-                  (margin, canvas_height // 2), (canvas_width - margin, margin), (margin, canvas_height - margin)]
-        return points[int((t * 5) % 5)]
+        points = [
+            (canvas_width//2, margin),
+            (margin, canvas_height- margin),
+            (canvas_width - margin, canvas_height//2 - 20),
+            (margin, canvas_height//2 - 20),
+            (canvas_width - margin, canvas_height - margin),
+        ]
+        idx = int(t * len(points)) % len(points)
+        x, y = points[idx]
     elif ex == "Random Jump":
-        return (random.randint(margin, canvas_width - margin), random.randint(margin, canvas_height - margin))
+        random.seed(int(t * 10))
+        x = random.randint(margin, canvas_width - margin)
+        y = random.randint(margin, canvas_height - margin)
+
     return x, y
 
 # --- Draw Dot ---
@@ -235,13 +249,13 @@ def draw_dot(x, y, scale=1.0):
     html = f"""
     <div style="position: relative; width: {canvas_width}px; height: {canvas_height}px;
                 background-color: {'#111' if dark_mode else '#e0f7fa'}; border-radius: 12px;">
-        <div style="position: absolute; left: {x - size // 2}px; top: {y - size // 2}px;
+        <div style="position: absolute; left: {x}px; top: {y}px;
                     width: {size}px; height: {size}px;
                     background-color: red; border-radius: 50%;"></div>
     </div>"""
     placeholder.markdown(html, unsafe_allow_html=True)
 
-# --- Automatic ---
+# --- Automatic Mode ---
 def run_automatic():
     for i, ex in enumerate(exercises):
         st.subheader(f"Now: {ex} ({i+1}/{len(exercises)})")
@@ -250,21 +264,20 @@ def run_automatic():
         while time.time() - start < 30:
             elapsed = time.time() - start
             t = (elapsed / 30) * speed_multiplier
-            if ex == "Near-Far Focus":
-                x, y, scale = get_position(t, ex)
+            result = get_position(t, ex)
+            if isinstance(result, tuple) and len(result) == 3:
+                x, y, scale = result
                 draw_dot(x, y, scale)
             else:
-                x, y = get_position(t, ex)
+                x, y = result
                 draw_dot(x, y)
-            if int(elapsed) != int(elapsed - 0.05 / speed_multiplier):
-                play_beep()
             countdown.markdown(f"⏳ {30 - int(elapsed)}s remaining")
             time.sleep(0.05 / speed_multiplier)
         placeholder.empty()
         countdown.empty()
     st.success("🎉 Routine Completed!")
 
-# --- Manual ---
+# --- Manual Mode ---
 def run_manual():
     with st.sidebar:
         st.subheader("🔧 Controls")
@@ -277,7 +290,8 @@ def run_manual():
         if st.button("Previous"):
             st.session_state.current_index = (st.session_state.current_index - 1) % len(exercises)
         sel = st.selectbox("Jump to", exercises, index=st.session_state.current_index)
-        st.session_state.current_index = exercises.index(sel)
+        if sel != exercises[st.session_state.current_index]:
+            st.session_state.current_index = exercises.index(sel)
 
     if st.session_state.is_running:
         ex = exercises[st.session_state.current_index]
@@ -287,20 +301,19 @@ def run_manual():
         while time.time() - start < 30 and st.session_state.is_running:
             elapsed = time.time() - start
             t = (elapsed / 30) * speed_multiplier
-            if ex == "Near-Far Focus":
-                x, y, scale = get_position(t, ex)
+            result = get_position(t, ex)
+            if isinstance(result, tuple) and len(result) == 3:
+                x, y, scale = result
                 draw_dot(x, y, scale)
             else:
-                x, y = get_position(t, ex)
+                x, y = result
                 draw_dot(x, y)
-            if int(elapsed) != int(elapsed - 0.05 / speed_multiplier):
-                play_beep()
             countdown.markdown(f"⏳ {30 - int(elapsed)}s remaining")
             time.sleep(0.05 / speed_multiplier)
         placeholder.empty()
         countdown.empty()
 
-# --- Run App ---
+# --- Start App Logic ---
 if mode == "🕒 Automatic":
     if st.button("▶ Start Automatic Routine"):
         run_automatic()
