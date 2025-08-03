@@ -198,9 +198,11 @@ def get_position(t, ex):
         elif side == 3:
             x = margin
             y = canvas_height - margin - int((canvas_height - 2 * margin) * prog)
-    elif ex == "Appearing Dot Focus":
-        visible = int(t * 2) % 2 == 0
-        return (canvas_width // 2, canvas_height // 2, dot_size) if visible else (-100, -100, dot_size)
+    elif exercise == "Appearing Dot Focus":
+                if int(elapsed) % 2 == 0:
+                    x, y = canvas_width // 2, canvas_height // 2
+                else:
+                    x, y = -100, -100  # Hidden
     elif ex == "Blinking":
         closed = int(t * 4) % 2 == 0
         return (canvas_width // 2, canvas_height // 2, 5 if closed else dot_size)
@@ -295,3 +297,4 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
