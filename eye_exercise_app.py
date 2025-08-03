@@ -11,6 +11,22 @@ from datetime import datetime
 # --- Page Config ---
 st.set_page_config(page_title="👁️ Eye Exercise Trainer", layout="wide")
 
+# --- Inject JS for fullscreen toggle on "f" key ---
+components.html("""
+<script>
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'f' || e.key === 'F') {
+        const elem = document.documentElement;
+        if (!document.fullscreenElement) {
+            elem.requestFullscreen().catch(err => console.log(err));
+        } else {
+            document.exitFullscreen();
+        }
+    }
+});
+</script>
+""", height=0)
+
 # --- Constants ---
 SESSION_TIMEOUT = 180  # seconds (3 min)
 CONFIG_FILE = "config.yaml"
@@ -323,3 +339,4 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
