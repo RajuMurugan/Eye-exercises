@@ -1,6 +1,3 @@
-# Full updated Streamlit code for Eye Exercise App without Blinking and Appearing Dot Focus
-# and with fixed Star Pattern
-
 import streamlit as st
 import platform
 import os
@@ -8,8 +5,8 @@ import time
 import math
 import yaml
 import uuid
-import random
 from datetime import datetime
+import json
 
 # --- Page Config ---
 st.set_page_config(page_title="👁️ Eye Exercise Trainer", layout="wide")
@@ -127,9 +124,10 @@ with st.sidebar:
 # --- Eye Exercises ---
 exercises = [
     "Left to Right", "Right to Left", "Top to Bottom", "Bottom to Top",
-    "Circle Clockwise", "Circle Anti-Clockwise", "Diagonal ↘", "Diagonal ↙",
+    "Circle Clockwise", "Circle Anti-Clockwise",
+    "Diagonal ↘", "Diagonal ↙", "Diagonal ↖", "Diagonal ↗",
     "Zig-Zag", "Near-Far Focus", "Figure Eight", "Square Path",
-    "Micro Saccades", "Eye Relaxation", "W Shape", "Star Pattern", "Random Jump"
+    "Micro Saccades", "Eye Relaxation", "W Shape", "Random Jump"
 ]
 
 # --- Settings ---
@@ -144,6 +142,7 @@ dark_mode = st.toggle("🌙 Dark Mode", value=False)
 speed_mode = st.selectbox("🌟 Speed Mode", ["Relax", "Therapy", "Focus"])
 speed_multiplier = {"Relax": 0.7, "Therapy": 1.0, "Focus": 1.3}[speed_mode]
 
+# --- UI State ---
 if "current_index" not in st.session_state:
     st.session_state.current_index = 0
 if "is_running" not in st.session_state:
@@ -179,13 +178,16 @@ def get_position(t, ex):
     elif ex == "Diagonal ↙":
         x = canvas_width - margin - int((canvas_width - 2 * margin) * progress)
         y = margin + int((canvas_height - 2 * margin) * progress)
+    elif ex == "Diagonal ↖":
+        x = canvas_width - margin - int((canvas_width - 2 * margin) * progress)
+        y = canvas_height - margin - int((canvas_height - 2 * margin) * progress)
+    elif ex == "Diagonal ↗":
+        x = margin + int((canvas_width - 2 * margin) * progress)
+        y = canvas_height - margin - int((canvas_height - 2 * margin) * progress)
     elif ex == "Zig-Zag":
         freq = 5
         x = margin + int((canvas_width - 2 * margin) * (t % 1))
         y = canvas_height // 2 + int(radius * math.sin(freq * 2 * math.pi * t) / 1.5)
-    elif ex == "Near-Far Focus":
-        scale = 0.5 + 0.5 * math.sin(2 * math.pi * t)
-        return (canvas_width // 2, canvas_height // 2, scale)
     elif ex == "Figure Eight":
         angle = 2 * math.pi * t
         x = canvas_width // 2 + int(radius * math.sin(angle))
@@ -205,6 +207,9 @@ def get_position(t, ex):
         elif side == 3:
             x = margin
             y = canvas_height - margin - int((canvas_height - 2 * margin) * prog)
+    elif ex == "Near-Far Focus":
+        scale = 0.5 + 0.5 * math.sin(2 * math.pi * t)
+        return canvas_width // 2, canvas_height // 2, scale
     elif ex == "Micro Saccades":
         x = canvas_width // 2 + int(10 * math.sin(30 * math.pi * t))
         y = canvas_height // 2 + int(10 * math.cos(25 * math.pi * t))
@@ -226,21 +231,9 @@ def get_position(t, ex):
         else:
             x = canvas_width - margin - int((canvas_width - 2 * margin) * p / 2)
             y = canvas_height - margin - int((canvas_height - 2 * margin) * p)
-    elif ex == "Star Pattern":
-        points = [
-            (canvas_width//2, margin),
-            (margin, canvas_height- margin),
-            (canvas_width - margin, canvas_height//2 - 20),
-            (margin, canvas_height//2 - 20),
-            (canvas_width - margin, canvas_height - margin),
-        ]
-        idx = int(t * len(points)) % len(points)
-        x, y = points[idx]
     elif ex == "Random Jump":
-        random.seed(int(t * 10))
-        x = random.randint(margin, canvas_width - margin)
-        y = random.randint(margin, canvas_height - margin)
-
+        x = margin + int((canvas_width - 2 * margin) * math.fabs(math.sin(math.pi * t * 7)))
+        y = margin + int((canvas_height - 2 * margin) * math.fabs(math.cos(math.pi * t * 5)))
     return x, y
 
 # --- Draw Dot ---
@@ -264,13 +257,11 @@ def run_automatic():
         while time.time() - start < 30:
             elapsed = time.time() - start
             t = (elapsed / 30) * speed_multiplier
-            result = get_position(t, ex)
-            if isinstance(result, tuple) and len(result) == 3:
-                x, y, scale = result
-                draw_dot(x, y, scale)
+            pos = get_position(t, ex)
+            if isinstance(pos, tuple) and len(pos) == 3:
+                draw_dot(pos[0], pos[1], pos[2])
             else:
-                x, y = result
-                draw_dot(x, y)
+                draw_dot(pos[0], pos[1])
             countdown.markdown(f"⏳ {30 - int(elapsed)}s remaining")
             time.sleep(0.05 / speed_multiplier)
         placeholder.empty()
@@ -301,13 +292,11 @@ def run_manual():
         while time.time() - start < 30 and st.session_state.is_running:
             elapsed = time.time() - start
             t = (elapsed / 30) * speed_multiplier
-            result = get_position(t, ex)
-            if isinstance(result, tuple) and len(result) == 3:
-                x, y, scale = result
-                draw_dot(x, y, scale)
+            pos = get_position(t, ex)
+            if isinstance(pos, tuple) and len(pos) == 3:
+                draw_dot(pos[0], pos[1], pos[2])
             else:
-                x, y = result
-                draw_dot(x, y)
+                draw_dot(pos[0], pos[1])
             countdown.markdown(f"⏳ {30 - int(elapsed)}s remaining")
             time.sleep(0.05 / speed_multiplier)
         placeholder.empty()
