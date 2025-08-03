@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import platform
 import os
 import time
@@ -11,45 +10,6 @@ import json
 
 # --- Page Config ---
 st.set_page_config(page_title="👁️ Eye Exercise Trainer", layout="wide")
-
-# --- JavaScript to capture screen size on first load ---
-if "screen_width" not in st.session_state or "screen_height" not in st.session_state:
-    components.html("""
-        <script>
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        const params = new URLSearchParams(window.location.search);
-        params.set("w", width);
-        params.set("h", height);
-        window.location.search = params.toString();
-        </script>
-    """, height=0)
-    st.stop()
-
-# --- Read screen size from query parameters ---
-query_params = st.experimental_get_query_params()
-if "w" in query_params and "h" in query_params:
-    try:
-        st.session_state.screen_width = int(query_params["w"][0])
-        st.session_state.screen_height = int(query_params["h"][0])
-    except:
-        st.session_state.screen_width = 1024
-        st.session_state.screen_height = 600
-else:
-    st.session_state.screen_width = 1024
-    st.session_state.screen_height = 600
-
-# You can now use st.session_state.screen_width and screen_height in your logic for canvas size
-# Replace your static canvas_width and canvas_height lines with something like this:
-canvas_width = st.session_state.screen_width - 100  # margin buffer
-canvas_height = st.session_state.screen_height - 200  # to account for top bars or mobile view
-
-# Continue with your existing app logic...
-# (You can paste the rest of your original code here, replacing canvas_width and canvas_height lines as above)
-
-# Example usage:
-st.write(f"Canvas size dynamically set to: {canvas_width}x{canvas_height}")
-
 
 # --- Constants ---
 SESSION_TIMEOUT = 180  # seconds (3 min)
@@ -330,7 +290,6 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
-
 
 
 
