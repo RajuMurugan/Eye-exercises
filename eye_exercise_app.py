@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import platform
 import os
 import time
@@ -133,19 +134,31 @@ st.title("👁️ Eye Exercise Trainer")
 mode = st.radio("Choose Mode", ["🕒 Automatic", "🎮 Controllable"], horizontal=True)
 device = st.selectbox("💻 Device", ["Laptop/Desktop", "Mobile"])
 
-# --- Full Screen Toggle ---
-if "fullscreen" not in st.session_state:
-    st.session_state.fullscreen = False
+# --- Browser Screen Size Detection ---
+browser_dims = st.empty()
+components.html("""
+<script>
+const width = window.innerWidth;
+const height = window.innerHeight;
+const input = window.parent.document.querySelector('input[id="browser-size"]');
+if(input){ input.value = `${width},${height}`; input.dispatchEvent(new Event("input", { bubbles: true })); }
+</script>
+""", height=0)
 
-if st.button("🖥️ Toggle Full Screen"):
-    st.session_state.fullscreen = not st.session_state.fullscreen
+dims_str = browser_dims.text_input("Browser Size", key="browser-size")
 
-# --- Adjust canvas based on full screen or device
-if st.session_state.fullscreen:
-    canvas_width, canvas_height = (1920, 1080)  # Fullscreen HD
-    radius = 200
-    dot_size = 40
-    st.info("🖥️ Full Screen Mode Activated")
+# --- Canvas Sizing ---
+if dims_str:
+    try:
+        w, h = map(int, dims_str.split(","))
+        canvas_width = w - 100
+        canvas_height = h - 180
+        radius = 200
+        dot_size = 40
+    except:
+        canvas_width, canvas_height = (1024, 600)
+        radius = 150
+        dot_size = 30
 else:
     if device == "Laptop/Desktop":
         canvas_width, canvas_height = (1024, 600)
@@ -161,7 +174,7 @@ dark_mode = st.toggle("🌙 Dark Mode", value=False)
 speed_mode = st.selectbox("🌟 Speed Mode", ["Relax", "Therapy", "Focus"])
 speed_multiplier = {"Relax": 0.7, "Therapy": 1.0, "Focus": 1.3}[speed_mode]
 
-# --- UI State ---
+# --- State ---
 if "current_index" not in st.session_state:
     st.session_state.current_index = 0
 if "is_running" not in st.session_state:
@@ -304,7 +317,7 @@ def run_manual():
         placeholder.empty()
         countdown.empty()
 
-# --- Start App Logic ---
+# --- Start Logic ---
 if mode == "🕒 Automatic":
     if st.button("▶ Start Automatic Routine"):
         run_automatic()
