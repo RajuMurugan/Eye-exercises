@@ -137,6 +137,10 @@ with st.sidebar:
         logout_user()
         st.rerun()
 
+# --- Placeholder for main app content ---
+st.title("👁️ Eye Exercise Trainer")
+
+
 # Ready for main app logic...
 
 
@@ -342,5 +346,6 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
 
 
