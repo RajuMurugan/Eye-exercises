@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import platform
 import os
 import time
@@ -7,25 +6,10 @@ import math
 import yaml
 import uuid
 from datetime import datetime
+import json
 
 # --- Page Config ---
 st.set_page_config(page_title="👁️ Eye Exercise Trainer", layout="wide")
-
-# --- Inject JS for fullscreen toggle on "f" key ---
-components.html("""
-<script>
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'f' || e.key === 'F') {
-        const elem = document.documentElement;
-        if (!document.fullscreenElement) {
-            elem.requestFullscreen().catch(err => console.log(err));
-        } else {
-            document.exitFullscreen();
-        }
-    }
-});
-</script>
-""", height=0)
 
 # --- Constants ---
 SESSION_TIMEOUT = 180  # seconds (3 min)
@@ -149,52 +133,15 @@ exercises = [
 st.title("👁️ Eye Exercise Trainer")
 mode = st.radio("Choose Mode", ["🕒 Automatic", "🎮 Controllable"], horizontal=True)
 device = st.selectbox("💻 Device", ["Laptop/Desktop", "Mobile"])
-
-# --- Browser Screen Size Detection ---
-browser_dims = st.empty()
-components.html("""
-<script>
-const width = window.innerWidth;
-const height = window.innerHeight;
-const input = window.parent.document.querySelector('input[id="browser-size"]');
-if(input){ input.value = `${width},${height}`; input.dispatchEvent(new Event("input", { bubbles: true })); }
-</script>
-""", height=0)
-
-# --- 🟢 Fix: Add this line to receive browser width/height ---
-browser_input = st.empty()
-dims_str = browser_input.text_input("", key="browser-size", label_visibility="collapsed")
-st.markdown("<style>div[data-testid='stTextInput'] { margin-top: -40px; margin-bottom: -30px; }</style>", unsafe_allow_html=True)
-
-
-# --- Canvas Sizing ---
-if dims_str:
-    try:
-        w, h = map(int, dims_str.split(","))
-        canvas_width = w - 100
-        canvas_height = h - 180
-        radius = 200
-        dot_size = 40
-    except:
-        canvas_width, canvas_height = (1024, 600)
-        radius = 150
-        dot_size = 30
-else:
-    if device == "Laptop/Desktop":
-        canvas_width, canvas_height = (1024, 600)
-        radius = 150
-        dot_size = 30
-    else:
-        canvas_width, canvas_height = (360, 300)
-        radius = 80
-        dot_size = 20
-
+canvas_width, canvas_height = (1024, 600) if device == "Laptop/Desktop" else (360, 300)
+radius = 150 if device == "Laptop/Desktop" else 80
+dot_size = 30 if device == "Laptop/Desktop" else 20
 margin = 40
 dark_mode = st.toggle("🌙 Dark Mode", value=False)
 speed_mode = st.selectbox("🌟 Speed Mode", ["Relax", "Therapy", "Focus"])
 speed_multiplier = {"Relax": 0.7, "Therapy": 1.0, "Focus": 1.3}[speed_mode]
 
-# --- State ---
+# --- UI State ---
 if "current_index" not in st.session_state:
     st.session_state.current_index = 0
 if "is_running" not in st.session_state:
@@ -202,7 +149,6 @@ if "is_running" not in st.session_state:
 
 placeholder = st.empty()
 countdown = st.empty()
-
 
 # --- Position Logic ---
 def get_position(t, ex):
@@ -338,15 +284,12 @@ def run_manual():
         placeholder.empty()
         countdown.empty()
 
-# --- Start Logic ---
+# --- Start App Logic ---
 if mode == "🕒 Automatic":
     if st.button("▶ Start Automatic Routine"):
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
-
-
-
 
 
 
