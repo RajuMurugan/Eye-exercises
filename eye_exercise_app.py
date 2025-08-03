@@ -133,7 +133,7 @@ exercises = [
 st.title("👁️ Eye Exercise Trainer")
 mode = st.radio("Choose Mode", ["🕒 Automatic", "🎮 Controllable"], horizontal=True)
 device = st.selectbox("💻 Device", ["Laptop/Desktop", "Mobile"])
-canvas_width, canvas_height = (1280, 720) if device == "Laptop/Desktop" else (360, 300)
+canvas_width, canvas_height = (1024, 600) if device == "Laptop/Desktop" else (360, 300)
 radius = 150 if device == "Laptop/Desktop" else 80
 dot_size = 30 if device == "Laptop/Desktop" else 20
 margin = 40
@@ -290,5 +290,6 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
 
 
