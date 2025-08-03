@@ -6,7 +6,6 @@ import math
 import yaml
 import uuid
 from datetime import datetime
-import json
 
 # --- Page Config ---
 st.set_page_config(page_title="👁️ Eye Exercise Trainer", layout="wide")
@@ -133,9 +132,30 @@ exercises = [
 st.title("👁️ Eye Exercise Trainer")
 mode = st.radio("Choose Mode", ["🕒 Automatic", "🎮 Controllable"], horizontal=True)
 device = st.selectbox("💻 Device", ["Laptop/Desktop", "Mobile"])
-canvas_width, canvas_height = (1024, 600) if device == "Laptop/Desktop" else (360, 300)
-radius = 150 if device == "Laptop/Desktop" else 80
-dot_size = 30 if device == "Laptop/Desktop" else 20
+
+# --- Full Screen Toggle ---
+if "fullscreen" not in st.session_state:
+    st.session_state.fullscreen = False
+
+if st.button("🖥️ Toggle Full Screen"):
+    st.session_state.fullscreen = not st.session_state.fullscreen
+
+# --- Adjust canvas based on full screen or device
+if st.session_state.fullscreen:
+    canvas_width, canvas_height = (1920, 1080)  # Fullscreen HD
+    radius = 200
+    dot_size = 40
+    st.info("🖥️ Full Screen Mode Activated")
+else:
+    if device == "Laptop/Desktop":
+        canvas_width, canvas_height = (1024, 600)
+        radius = 150
+        dot_size = 30
+    else:
+        canvas_width, canvas_height = (360, 300)
+        radius = 80
+        dot_size = 20
+
 margin = 40
 dark_mode = st.toggle("🌙 Dark Mode", value=False)
 speed_mode = st.selectbox("🌟 Speed Mode", ["Relax", "Therapy", "Focus"])
@@ -290,6 +310,3 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
-
-
-
