@@ -12,20 +12,27 @@ from datetime import datetime
 st.set_page_config(page_title="👁️ Eye Exercise Trainer", layout="wide")
 
 # --- Inject JS for fullscreen toggle on "f" key ---
+# --- Inject hidden browser-size input field ---
 components.html("""
 <script>
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'f' || e.key === 'F') {
-        const elem = document.documentElement;
-        if (!document.fullscreenElement) {
-            elem.requestFullscreen().catch(err => console.log(err));
-        } else {
-            document.exitFullscreen();
-        }
-    }
-});
+const width = window.innerWidth;
+const height = window.innerHeight;
+window.parent.postMessage({type: 'dimensions', value: `${width},${height}`}, '*');
 </script>
 """, height=0)
+
+# --- Receive value using st_javascript injection ---
+dims_str = st.text_input("browser-size", "", key="browser-size", label_visibility="collapsed")
+
+# --- Hide the text input field completely using CSS ---
+st.markdown("""
+<style>
+div[data-testid="stTextInput"] {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 # --- Constants ---
 SESSION_TIMEOUT = 180  # seconds (3 min)
@@ -344,6 +351,7 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
 
 
 
