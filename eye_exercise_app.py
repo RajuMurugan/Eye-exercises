@@ -161,7 +161,8 @@ if(input){ input.value = `${width},${height}`; input.dispatchEvent(new Event("in
 </script>
 """, height=0)
 
-
+# --- 🟢 Fix: Add this line to receive browser width/height ---
+dims_str = st.text_input("browser-size", key="browser-size", label_visibility="collapsed")
 
 # --- Canvas Sizing ---
 if dims_str:
@@ -198,6 +199,7 @@ if "is_running" not in st.session_state:
 
 placeholder = st.empty()
 countdown = st.empty()
+
 
 # --- Position Logic ---
 def get_position(t, ex):
@@ -339,6 +341,7 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
 
 
 
