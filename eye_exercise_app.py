@@ -200,13 +200,13 @@ def get_position(t, ex):
             y = canvas_height - margin - int((canvas_height - 2 * margin) * prog)
     elif ex == "Appearing Dot Focus":
         visible = int(t * 2) % 2 == 0
-        return (canvas_width // 2, canvas_height // 2) if visible else (-100, -100)
+        return (canvas_width // 2, canvas_height // 2, dot_size) if visible else (-100, -100, dot_size)
     elif ex == "Blinking":
-        visible = int(t * 4) % 2 == 0
-        return (canvas_width // 2, canvas_height // 2) if visible else (-100, -100)
+        closed = int(t * 4) % 2 == 0
+        return (canvas_width // 2, canvas_height // 2, 5 if closed else dot_size)
     elif ex == "Near-Far Focus":
         factor = 1.5 + math.sin(2 * math.pi * t)
-        return x, y, max(10, int(dot_size * factor))
+        return (x, y, max(10, int(dot_size * factor)))
     elif ex == "Micro Saccades":
         x = canvas_width // 2 + int(10 * math.sin(30 * math.pi * t))
         y = canvas_height // 2 + int(10 * math.cos(25 * math.pi * t))
@@ -228,12 +228,10 @@ def get_position(t, ex):
         else:
             x = canvas_width - margin - int((canvas_width - 2 * margin) * p / 2)
             y = canvas_height - margin - int((canvas_height - 2 * margin) * p)
-    return x, y
+    return x, y, dot_size
 
 # --- Draw Dot ---
-def draw_dot(x, y, size=None):
-    if size is None:
-        size = dot_size
+def draw_dot(x, y, size):
     html = f"""
     <div style="position: relative; width: {canvas_width}px; height: {canvas_height}px;
                 background-color: {'#111' if dark_mode else '#e0f7fa'}; border-radius: 12px;">
@@ -252,8 +250,8 @@ def run_automatic():
         while time.time() - start < 30:
             elapsed = time.time() - start
             t = (elapsed / 30) * speed_multiplier
-            pos = get_position(t, ex)
-            draw_dot(*pos) if isinstance(pos, tuple) else None
+            x, y, size = get_position(t, ex)
+            draw_dot(x, y, size)
             countdown.markdown(f"⏳ {30 - int(elapsed)}s remaining")
             time.sleep(0.05 / speed_multiplier)
         placeholder.empty()
@@ -284,8 +282,8 @@ def run_manual():
         while time.time() - start < 30 and st.session_state.is_running:
             elapsed = time.time() - start
             t = (elapsed / 30) * speed_multiplier
-            pos = get_position(t, ex)
-            draw_dot(*pos) if isinstance(pos, tuple) else None
+            x, y, size = get_position(t, ex)
+            draw_dot(x, y, size)
             countdown.markdown(f"⏳ {30 - int(elapsed)}s remaining")
             time.sleep(0.05 / speed_multiplier)
         placeholder.empty()
