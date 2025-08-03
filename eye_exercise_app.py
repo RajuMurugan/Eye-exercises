@@ -5,6 +5,7 @@ import time
 import math
 import yaml
 import uuid
+import random  # NEW
 from datetime import datetime
 import json
 
@@ -12,7 +13,7 @@ import json
 st.set_page_config(page_title="👁️ Eye Exercise Trainer", layout="wide")
 
 # --- Constants ---
-SESSION_TIMEOUT = 180  # seconds (3 min)
+SESSION_TIMEOUT = 180
 CONFIG_FILE = "config.yaml"
 SESSION_FILE = "session_data.yaml"
 
@@ -121,12 +122,13 @@ with st.sidebar:
         logout_user()
         st.rerun()
 
-# --- Eye Exercises ---
+# --- Eye Exercises (20) ---
 exercises = [
     "Left to Right", "Right to Left", "Top to Bottom", "Bottom to Top",
     "Circle Clockwise", "Circle Anti-Clockwise", "Diagonal ↘", "Diagonal ↙",
     "Zig-Zag", "Blinking", "Near-Far Focus", "Figure Eight", "Square Path",
-    "Appearing Dot Focus", "Micro Saccades", "Eye Relaxation", "W Shape"
+    "Appearing Dot Focus", "Micro Saccades", "Eye Relaxation", "W Shape",
+    "Random Jump", "Star Pattern", "Infinity Loop"
 ]
 
 # --- Settings ---
@@ -151,7 +153,7 @@ placeholder = st.empty()
 countdown = st.empty()
 
 # --- Position Logic ---
-def get_position(t, ex, canvas_width, canvas_height, margin, radius):
+def get_position(t, ex):
     x, y = canvas_width // 2, canvas_height // 2
     progress = abs(math.sin(2 * math.pi * t))
 
@@ -172,11 +174,11 @@ def get_position(t, ex, canvas_width, canvas_height, margin, radius):
         x = canvas_width // 2 + int(radius * math.cos(angle))
         y = canvas_height // 2 + int(radius * math.sin(angle))
     elif ex == "Diagonal ↘":
-        x = margin + int((canvas_width - 2 * margin) * (t % 1))
-        y = margin + int((canvas_height - 2 * margin) * (t % 1))
+        x = margin + int((canvas_width - 2 * margin) * progress)
+        y = margin + int((canvas_height - 2 * margin) * progress)
     elif ex == "Diagonal ↙":
-        x = canvas_width - margin - int((canvas_width - 2 * margin) * (t % 1))
-        y = margin + int((canvas_height - 2 * margin) * (t % 1))
+        x = canvas_width - margin - int((canvas_width - 2 * margin) * progress)
+        y = margin + int((canvas_height - 2 * margin) * progress)
     elif ex == "Zig-Zag":
         freq = 5
         x = margin + int((canvas_width - 2 * margin) * (t % 1))
@@ -204,17 +206,52 @@ def get_position(t, ex, canvas_width, canvas_height, margin, radius):
         visible = math.sin(2 * math.pi * t) > 0
         return (canvas_width // 2, canvas_height // 2) if visible else (-1000, -1000)
     elif ex == "Blinking":
-        blink = int(t * 2) % 2 == 0
-        return (canvas_width // 2, canvas_height // 2) if blink else (-1000, -1000)
+        blink = int(t * 2) % 2
+        return (canvas_width // 2, canvas_height // 2) if blink == 0 else (-1000, -1000)
     elif ex == "Near-Far Focus":
         scale = 0.5 + 0.5 * math.sin(2 * math.pi * t)
         return (canvas_width // 2, canvas_height // 2, scale)
     elif ex == "Micro Saccades":
         x = canvas_width // 2 + int(10 * math.sin(30 * math.pi * t))
         y = canvas_height // 2 + int(10 * math.cos(25 * math.pi * t))
-
+    elif ex == "Eye Relaxation":
+        x = canvas_width // 2 + int(radius * math.sin(2 * math.pi * t))
+        y = canvas_height // 2 + int(radius * math.sin(math.pi * t))
+    elif ex == "W Shape":
+        phase = (t * 4) % 4
+        p = phase % 1
+        if phase < 1:
+            x = margin + int((canvas_width - 2 * margin) * p / 2)
+            y = margin + int((canvas_height - 2 * margin) * p)
+        elif phase < 2:
+            x = canvas_width // 2 + int((canvas_width - 2 * margin) * p / 2)
+            y = canvas_height - margin - int((canvas_height - 2 * margin) * p)
+        elif phase < 3:
+            x = canvas_width // 2 + int((canvas_width - 2 * margin) * p / 2)
+            y = margin + int((canvas_height - 2 * margin) * p)
+        else:
+            x = canvas_width - margin - int((canvas_width - 2 * margin) * p / 2)
+            y = canvas_height - margin - int((canvas_height - 2 * margin) * p)
+    elif ex == "Random Jump":
+        index = int(t * 2)
+        random.seed(index)
+        x = random.randint(margin, canvas_width - margin)
+        y = random.randint(margin, canvas_height - margin)
+    elif ex == "Star Pattern":
+        phase = (t * 5) % 5
+        points = [
+            (canvas_width // 2, margin),
+            (canvas_width - margin, canvas_height - margin),
+            (margin, canvas_height // 2),
+            (canvas_width - margin, margin),
+            (margin, canvas_height - margin),
+        ]
+        x, y = points[int(phase)]
+    elif ex == "Infinity Loop":
+        angle = 2 * math.pi * t
+        x = canvas_width // 2 + int(radius * math.sin(angle))
+        y = canvas_height // 2 + int(radius * math.sin(angle) * math.cos(angle))
     return x, y
-
 
 # --- Draw Dot ---
 def draw_dot(x, y):
@@ -236,7 +273,11 @@ def run_automatic():
         while time.time() - start < 30:
             elapsed = time.time() - start
             t = (elapsed / 30) * speed_multiplier
-            x, y = get_position(t, ex)
+            result = get_position(t, ex)
+            if isinstance(result, tuple) and len(result) == 3:
+                x, y, _ = result
+            else:
+                x, y = result
             draw_dot(x, y)
             countdown.markdown(f"⏳ {30 - int(elapsed)}s remaining")
             time.sleep(0.05 / speed_multiplier)
@@ -268,7 +309,11 @@ def run_manual():
         while time.time() - start < 30 and st.session_state.is_running:
             elapsed = time.time() - start
             t = (elapsed / 30) * speed_multiplier
-            x, y = get_position(t, ex)
+            result = get_position(t, ex)
+            if isinstance(result, tuple) and len(result) == 3:
+                x, y, _ = result
+            else:
+                x, y = result
             draw_dot(x, y)
             countdown.markdown(f"⏳ {30 - int(elapsed)}s remaining")
             time.sleep(0.05 / speed_multiplier)
@@ -281,5 +326,3 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
-
-
