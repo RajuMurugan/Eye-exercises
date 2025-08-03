@@ -129,6 +129,7 @@ exercises = [
     "Appearing Dot Focus", "Micro Saccades", "Eye Relaxation", "W Shape"
 ]
 
+# --- Settings ---
 st.title("👁️ Eye Exercise Trainer")
 mode = st.radio("Choose Mode", ["🕒 Automatic", "🎮 Controllable"], horizontal=True)
 device = st.selectbox("💻 Device", ["Laptop/Desktop", "Mobile"])
@@ -140,6 +141,7 @@ dark_mode = st.toggle("🌙 Dark Mode", value=False)
 speed_mode = st.selectbox("🌟 Speed Mode", ["Relax", "Therapy", "Focus"])
 speed_multiplier = {"Relax": 0.7, "Therapy": 1.0, "Focus": 1.3}[speed_mode]
 
+# --- UI State ---
 if "current_index" not in st.session_state:
     st.session_state.current_index = 0
 if "is_running" not in st.session_state:
@@ -152,7 +154,6 @@ countdown = st.empty()
 def get_position(t, ex):
     x, y = canvas_width // 2, canvas_height // 2
     progress = abs(math.sin(2 * math.pi * t))
-
     if ex == "Left to Right":
         x = margin + int((canvas_width - 2 * margin) * progress)
     elif ex == "Right to Left":
@@ -198,17 +199,9 @@ def get_position(t, ex):
         elif side == 3:
             x = margin
             y = canvas_height - margin - int((canvas_height - 2 * margin) * prog)
-    elif exercise == "Appearing Dot Focus":
-                if int(elapsed) % 2 == 0:
-                    x, y = canvas_width // 2, canvas_height // 2
-                else:
-                    x, y = -100, -100  # Hidden
-    elif ex == "Blinking":
-        closed = int(t * 4) % 2 == 0
-        return (canvas_width // 2, canvas_height // 2, 5 if closed else dot_size)
-    elif ex == "Near-Far Focus":
-        factor = 1.5 + math.sin(2 * math.pi * t)
-        return (x, y, max(10, int(dot_size * factor)))
+    elif ex == "Appearing Dot Focus":
+        visible = int(t * 2) % 2 == 0
+        return (canvas_width // 2, canvas_height // 2) if visible else (-100, -100)
     elif ex == "Micro Saccades":
         x = canvas_width // 2 + int(10 * math.sin(30 * math.pi * t))
         y = canvas_height // 2 + int(10 * math.cos(25 * math.pi * t))
@@ -230,15 +223,15 @@ def get_position(t, ex):
         else:
             x = canvas_width - margin - int((canvas_width - 2 * margin) * p / 2)
             y = canvas_height - margin - int((canvas_height - 2 * margin) * p)
-    return x, y, dot_size
+    return x, y
 
 # --- Draw Dot ---
-def draw_dot(x, y, size):
+def draw_dot(x, y):
     html = f"""
     <div style="position: relative; width: {canvas_width}px; height: {canvas_height}px;
                 background-color: {'#111' if dark_mode else '#e0f7fa'}; border-radius: 12px;">
         <div style="position: absolute; left: {x}px; top: {y}px;
-                    width: {size}px; height: {size}px;
+                    width: {dot_size}px; height: {dot_size}px;
                     background-color: red; border-radius: 50%;"></div>
     </div>"""
     placeholder.markdown(html, unsafe_allow_html=True)
@@ -252,8 +245,8 @@ def run_automatic():
         while time.time() - start < 30:
             elapsed = time.time() - start
             t = (elapsed / 30) * speed_multiplier
-            x, y, size = get_position(t, ex)
-            draw_dot(x, y, size)
+            x, y = get_position(t, ex)
+            draw_dot(x, y)
             countdown.markdown(f"⏳ {30 - int(elapsed)}s remaining")
             time.sleep(0.05 / speed_multiplier)
         placeholder.empty()
@@ -284,8 +277,8 @@ def run_manual():
         while time.time() - start < 30 and st.session_state.is_running:
             elapsed = time.time() - start
             t = (elapsed / 30) * speed_multiplier
-            x, y, size = get_position(t, ex)
-            draw_dot(x, y, size)
+            x, y = get_position(t, ex)
+            draw_dot(x, y)
             countdown.markdown(f"⏳ {30 - int(elapsed)}s remaining")
             time.sleep(0.05 / speed_multiplier)
         placeholder.empty()
@@ -297,4 +290,3 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
-
