@@ -239,28 +239,15 @@ def get_position(t, ex):
 # --- Draw Dot ---
 def draw_dot(x, y, scale=1.0):
     size = int(dot_size * scale)
-    border_color = "#ff9800"  # Margin color (orange)
-    bg_color = '#111' if dark_mode else '#e0f7fa'
-    
     html = f"""
     <div style="position: relative; width: {canvas_width}px; height: {canvas_height}px;
-                background-color: {bg_color}; border-radius: 12px;">
-
-        <!-- Margin Box -->
-        <div style="position: absolute; 
-                    left: {margin}px; top: {margin}px; 
-                    width: {canvas_width - 2*margin}px; 
-                    height: {canvas_height - 2*margin}px;
-                    border: 3px dashed {border_color}; 
-                    box-sizing: border-box;"></div>
-
-        <!-- Moving Dot -->
+                background-color: {'#111' if dark_mode else '#e0f7fa'}; border-radius: 12px;">
         <div style="position: absolute; left: {x}px; top: {y}px;
                     width: {size}px; height: {size}px;
                     background-color: red; border-radius: 50%;"></div>
-    </div>
-    """
+    </div>"""
     placeholder.markdown(html, unsafe_allow_html=True)
+
 
 # --- Automatic Mode ---
 def run_automatic():
@@ -322,6 +309,7 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
 
 
 
