@@ -1,5 +1,4 @@
-import streamlit as st
-import streamlit.components.v1 as components
+import streamlit as st 
 import platform
 import os
 import time
@@ -131,43 +130,14 @@ exercises = [
     "Micro Saccades", "Eye Relaxation", "W Shape", "Random Jump"
 ]
 
-# --- Get Browser Dimensions ---
-def get_browser_dimensions():
-    components.html(
-        """
-        <script>
-        const dims = {
-            width: window.innerWidth,
-            height: window.innerHeight
-        };
-        const input = window.parent.document.querySelector('input[data-testid="screen-dim"]');
-        if (input) {
-            input.value = JSON.stringify(dims);
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-        </script>
-        <input type="text" id="screen-dim" data-testid="screen-dim" style="visibility: hidden;">
-        """,
-        height=0
-    )
-
-st.text_input("Screen Dimensions (auto)", key="screen_dims")
-get_browser_dimensions()
-
-try:
-    dims = json.loads(st.session_state.screen_dims)
-    canvas_width = int(dims["width"] * 0.95)
-    canvas_height = int(dims["height"] * 0.65)
-except:
-    canvas_width, canvas_height = 800, 500  # fallback
-
-radius = min(canvas_width, canvas_height) // 6
-dot_size = min(canvas_width, canvas_height) // 30
-margin = 40
-
 # --- Settings ---
 st.title("👁️ Eye Exercise Trainer")
 mode = st.radio("Choose Mode", ["🕒 Automatic", "🎮 Controllable"], horizontal=True)
+device = st.selectbox("💻 Device", ["Laptop/Desktop", "Mobile"])
+canvas_width, canvas_height = (1920, 900) if device == "Laptop/Desktop" else (360, 300)
+radius = 150 if device == "Laptop/Desktop" else 80
+dot_size = 30 if device == "Laptop/Desktop" else 20
+margin = 40
 dark_mode = st.toggle("🌙 Dark Mode", value=False)
 speed_mode = st.selectbox("🌟 Speed Mode", ["Relax", "Therapy", "Focus"])
 speed_multiplier = {"Relax": 0.7, "Therapy": 1.0, "Focus": 1.3}[speed_mode]
@@ -338,3 +308,5 @@ if mode == "🕒 Automatic":
         run_automatic()
 elif mode == "🎮 Controllable":
     run_manual()
+
+
